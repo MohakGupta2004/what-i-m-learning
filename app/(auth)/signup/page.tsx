@@ -62,18 +62,14 @@ export default function Login() {
         } else {
           // User is signed out
           // ...
-          toast.error("Failed to sign up")
+          toast.error("Invalid Credentials")
+          setLoading(false)
         }
-      
-      toast(
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>,
-      )
+    
     } catch (error) {
-      console.error('Form submission error', error)
       toast.error('Failed to submit the form. Please try again.')
-    }
+      setLoading(false)
+    } 
   }
 
   return (
@@ -134,7 +130,7 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className={`w-full`} >
+                <Button type="submit" className={`w-full ${loading && `text-gray-500`}`} >
                   {loading && <Spinner/>}
                   Sign up
                 </Button>

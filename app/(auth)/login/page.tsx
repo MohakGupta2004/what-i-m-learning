@@ -26,6 +26,9 @@ import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 
 import { loginFormSchema } from '@/lib/validation-schemas'
+import { useState } from 'react'
+import { Spinner } from '@/components/ui/spinner'
+import { useRouter } from 'next/navigation'
 
 const formSchema = loginFormSchema
 
@@ -37,16 +40,31 @@ export default function Login() {
       password: '',
     },
   })
-
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       // Assuming an async login function
-      console.log(values)
-      toast(
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>,
-      )
+      setLoading(true)
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to authenticate')
+      }
+
+      const data = await response.json()
+      if (!data.success) {
+        throw new Error('Failed to authenticate')
+      }
+      setLoading(false)
+      router.push('/')
+
     } catch (error) {
       console.error('Form submission error', error)
       toast.error('Failed to submit the form. Please try again.')
@@ -112,6 +130,7 @@ export default function Login() {
                   )}
                 />
                 <Button type="submit" className="w-full">
+                  {loading && <Spinner/>}
                   Login
                 </Button>
                 <Button variant="outline" className="w-full">
