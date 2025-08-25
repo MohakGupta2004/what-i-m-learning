@@ -29,6 +29,10 @@ import { loginFormSchema } from '@/lib/validation-schemas'
 import { useState } from 'react'
 import { Spinner } from '@/components/ui/spinner'
 import { useRouter } from 'next/navigation'
+import { GoogleAuthProvider } from 'firebase/auth'
+import { signInWithPopup } from 'firebase/auth'
+import { auth, db } from '@/lib/firebase'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 
 const formSchema = loginFormSchema
 
@@ -63,13 +67,26 @@ export default function Login() {
         throw new Error('Failed to authenticate')
       }
       setLoading(false)
-      router.push('/')
+      router.push('/dashboard')
 
     } catch (error) {
       console.error('Form submission error', error)
       toast.error('Failed to submit the form. Please try again.')
     }
   }
+
+  async function handleGoogleSignin() {
+      const provider = new GoogleAuthProvider();
+      const { user } = await signInWithPopup(auth, provider)
+  
+      if(!user){
+        toast.error("Failed to signin using Google")
+        return;
+      }
+  
+      toast.success("Successfully signed in")
+      router.push("/dashboard")
+    }
 
   return (
     <div className="h-screen flex items-center justify-center">
@@ -133,7 +150,7 @@ export default function Login() {
                   {loading && <Spinner/>}
                   Login
                 </Button>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={handleGoogleSignin}>
                   Login with Google
                 </Button>
               </div>

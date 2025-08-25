@@ -28,8 +28,10 @@ import { PasswordInput } from '@/components/ui/password-input'
 import { loginFormSchema } from '@/lib/validation-schemas'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { Spinner } from '@/components/ui/spinner'
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { auth, db } from '@/lib/firebase'
+import { addDoc, collection, serverTimestamp, setDoc } from 'firebase/firestore'
 
 const formSchema = loginFormSchema
 
@@ -51,25 +53,46 @@ export default function Login() {
       const result = await fetch("/api/signup", {
         method: 'POST',
         headers: {
-            'Content-type': 'application/json'
+          'Content-type': 'application/json'
         },
         body: JSON.stringify(values)
       })
       const userDetails = await result.json()
-        if (userDetails.userId) {
-          setLoading(false)
-          router.push('/')
-        } else {
-          // User is signed out
-          // ...
-          toast.error("Invalid Credentials")
-          setLoading(false)
-        }
-    
+      if (userDetails.userId) {
+        setLoading(false)
+        router.push('/dashboard')
+      } else {
+        // User is signed out
+        // ...
+        toast.error("Invalid Credentials")
+        setLoading(false)
+      }
+
     } catch (error) {
       toast.error('Failed to submit the form. Please try again.')
       setLoading(false)
-    } 
+    }
+  }
+
+  async function handleGoogleSignin() {
+    const provider = new GoogleAuthProvider();
+    const { user } = await signInWithPopup(auth, provider);
+    const userDoc = addDoc(collection(db, "users"), {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoUrl: user.photoURL,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    })
+
+    if(!userDoc){
+      toast.error("Failed to signup using Google")
+      return;
+    }
+
+    toast.success("Successfully signed in")
+    router.push("/dashboard")
   }
 
   return (
@@ -131,10 +154,11 @@ export default function Login() {
                   )}
                 />
                 <Button type="submit" className={`w-full ${loading && `text-gray-500`}`} >
-                  {loading && <Spinner/>}
+                  {loading && <Spinner />}
                   Sign up
                 </Button>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={handleGoogleSignin}>
+                  {loading && <Spinner />}
                   Signup with Google
                 </Button>
               </div>
